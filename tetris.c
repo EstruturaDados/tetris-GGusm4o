@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 // Desafio Tetris Stack
 // Tema 3 - Integração de Fila e Pilha
@@ -116,7 +115,6 @@ int main(void) {
     //      0 - Sair
     // - A cada remoção, insira uma nova peça ao final da fila.
 
-    srand(time(NULL));
     Fila filaPeca;
     Peca PecaAux;
     int opcao;
