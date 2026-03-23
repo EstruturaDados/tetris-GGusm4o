@@ -1,0 +1,11 @@
+# Compilados e Executáveis
+*.o
+*.out
+*.exe
+
+# Se você estiver usando alguma IDE (como VS Code)
+.vscode/
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db
