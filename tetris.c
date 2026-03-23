@@ -1,11 +1,108 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 // Desafio Tetris Stack
 // Tema 3 - Integração de Fila e Pilha
 // Este código inicial serve como base para o desenvolvimento do sistema de controle de peças.
 // Use as instruções de cada nível para desenvolver o desafio.
 
-int main() {
+#define MAX 5
+
+// ----- Estrutura da peça -----
+typedef struct {
+    char tipo;  // I, O, T, L
+    int id;
+} Peca;
+
+// ----- Estrutura da fila circular -----
+typedef struct {
+    Peca itens[MAX];
+    int inicio;
+    int fim;
+    int total;
+} Fila;
+
+// ----- Variável global para ID único -----
+int countID = 0;
+
+// ----- Gerar peça automaticamente -----
+Peca gerarPeca(int id) {
+    char tipos[] = {'I', 'O', 'T', 'L'};
+    Peca p;
+    p.tipo = tipos[rand() % 4];
+    p.id = id;
+    return p;
+}
+
+// ----- inicializar fila -----
+void inicializarFila(Fila *f) {
+    f->inicio = 0;
+    f->fim = 0;
+    f->total = 0;
+}
+
+// ----- Verificações -----
+int filaCheia(Fila *f){
+    return f->total == MAX;
+}
+
+int filaVazia(Fila *f){
+    return f->total == 0;
+}
+
+// ----- Enqueue -----
+void inserirPeca(Fila *f, Peca p) {
+    if (filaCheia(f)) {
+        printf("Fila CHEIA. Não é possivel inserir.\n");
+        return;
+    }
+
+    f->itens[f->fim] = p;
+    f->fim = (f->fim + 1) % MAX;
+    f->total++;
+}
+
+// ----- Dequeue -----
+void removerPeca(Fila *f, Peca *p) {
+    if (filaVazia(f)) {
+        printf("Fila VAZIA. Não é possivel remover.\n");
+        return;
+    }
+
+    *p = f->itens[f->inicio];
+    f->inicio = (f->inicio + 1) % MAX;
+    f->total--;
+}
+
+// ----- Exibir fila -----
+void mostrarFila(Fila *f) {
+    printf("\nFila de peças: ");
+
+    if (filaVazia(f)){
+        printf("[Vazia]");
+        return;
+    }
+
+    int i, idx = f->inicio;
+
+    for (int i = 0, idx = f->inicio; i < f->total; i++) {
+        int idx = (f->inicio + i) % MAX;
+        printf("[%c, %d] ", f->itens[idx].tipo, f->itens[idx].id);
+    }
+
+    printf("\n");
+}
+
+// ----- Preencher fila inicial -----
+void preencherInicial(Fila *f) {
+    for (int i = 0; i < MAX; i++) {
+        // Altere aqui para o nome correto que você definiu na função
+        inserirPeca(f, gerarPeca(countID++)); 
+    }
+}
+
+int main(void) {
 
     // 🧩 Nível Novato: Fila de Peças Futuras
     //
@@ -19,7 +116,41 @@ int main() {
     //      0 - Sair
     // - A cada remoção, insira uma nova peça ao final da fila.
 
+    srand(time(NULL));
+    Fila filaPeca;
+    Peca PecaAux;
+    int opcao;
 
+    inicializarFila(&filaPeca);
+    preencherInicial(&filaPeca);
+
+    do {
+        mostrarFila(&filaPeca);
+        
+        printf("\n1 - Jogar Peça (dequeue)");
+        printf("\n2 - Inserir Nova Peça (enqueue)");
+        printf("\n0 - Sair");
+        printf("\nEscolha um opção: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+        case 1:
+            removerPeca(&filaPeca, &PecaAux);
+            break;
+
+        case 2:
+            inserirPeca(&filaPeca, PecaAux);
+            break;
+
+        case 0:
+            printf("Encerrar...\n");
+            break;
+
+
+        default:
+        printf("Opção invalida!\n");
+        }
+    } while (opcao != 0);
 
     // 🧠 Nível Aventureiro: Adição da Pilha de Reserva
     //
@@ -31,7 +162,6 @@ int main() {
     //      3 - Usar peça da reserva (remover do topo da pilha)
     // - Exiba a pilha junto com a fila após cada ação com mostrarPilha().
     // - Mantenha a fila sempre com 5 peças (repondo com gerarPeca()).
-
 
     // 🔄 Nível Mestre: Integração Estratégica entre Fila e Pilha
     //
