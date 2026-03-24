@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 // Desafio Tetris Stack
 // Tema 3 - Integração de Fila e Pilha
 // Este código inicial serve como base para o desenvolvimento do sistema de controle de peças.
 // Use as instruções de cada nível para desenvolver o desafio.
 
-#define MAX 5
+#define MAX_FILA 5
+#define MAX_PILHA 3
 
 // ----- Estrutura da peça -----
 typedef struct {
@@ -16,34 +18,43 @@ typedef struct {
 
 // ----- Estrutura da fila circular -----
 typedef struct {
-    Peca itens[MAX];
-    int inicio;
-    int fim;
-    int total;
+    Peca itens[MAX_FILA];
+    int inicio, fim, total;
 } Fila;
+
+typedef struct {
+    Peca itens[MAX_PILHA];
+    int topo;
+} Pilha;
+
 
 // ----- Variável global para ID único -----
 int countID = 0;
 
 // ----- Gerar peça automaticamente -----
-Peca gerarPeca(int id) {
+Peca gerarPeca() {
     char tipos[] = {'I', 'O', 'T', 'L'};
     Peca p;
     p.tipo = tipos[rand() % 4];
-    p.id = id;
+    p.id = countID++;
     return p;
 }
-
+// ----- Funções da fila -----
 // ----- inicializar fila -----
 void inicializarFila(Fila *f) {
     f->inicio = 0;
     f->fim = 0;
     f->total = 0;
+    for (int i = 0; i < MAX_FILA; i++) {
+        f->itens[f->fim] = gerarPeca();
+        f->fim = (f->fim + 1) % MAX_FILA;
+        f->total++;
+    }
 }
 
 // ----- Verificações -----
 int filaCheia(Fila *f){
-    return f->total == MAX;
+    return f->total == MAX_FILA;
 }
 
 int filaVazia(Fila *f){
@@ -51,26 +62,26 @@ int filaVazia(Fila *f){
 }
 
 // ----- Enqueue -----
-void inserirPeca(Fila *f, Peca p) {
+void enqueue(Fila *f, Peca p) {
     if (filaCheia(f)) {
         printf("Fila CHEIA. Não é possivel inserir.\n");
         return;
     }
 
     f->itens[f->fim] = p;
-    f->fim = (f->fim + 1) % MAX;
+    f->fim = (f->fim + 1) % MAX_FILA;
     f->total++;
 }
 
 // ----- Dequeue -----
-void removerPeca(Fila *f, Peca *p) {
+void dequeue(Fila *f, Peca *p) {
     if (filaVazia(f)) {
         printf("Fila VAZIA. Não é possivel remover.\n");
         return;
     }
 
     *p = f->itens[f->inicio];
-    f->inicio = (f->inicio + 1) % MAX;
+    f->inicio = (f->inicio + 1) % MAX_FILA;
     f->total--;
 }
 
@@ -86,7 +97,7 @@ void mostrarFila(Fila *f) {
     int i, idx = f->inicio;
 
     for (int i = 0, idx = f->inicio; i < f->total; i++) {
-        int idx = (f->inicio + i) % MAX;
+        int idx = (f->inicio + i) % MAX_FILA;
         printf("[%c, %d] ", f->itens[idx].tipo, f->itens[idx].id);
     }
 
@@ -95,13 +106,58 @@ void mostrarFila(Fila *f) {
 
 // ----- Preencher fila inicial -----
 void preencherInicial(Fila *f) {
-    for (int i = 0; i < MAX; i++) {
+    for (int i = 0; i < MAX_FILA; i++) {
         // Altere aqui para o nome correto que você definiu na função
-        inserirPeca(f, gerarPeca(countID++)); 
+        enqueue(f, gerarPeca());
     }
 }
 
+// ----- Funções da Pilha -----
+// ----- inicializar pilha -----
+void inicializarPilha(Pilha *p) {
+    p->topo = -1;
+}
+
+// ----- Verificações -----
+int pilhaVazia(Pilha *p) {
+    return p->topo == -1;
+}
+
+int pilhaCheia(Pilha *p) {
+    return p->topo == MAX_PILHA - 1;
+};
+
+void push(Pilha *p, Peca nova) {
+    if (pilhaCheia(p)) {
+        printf("Erro: pilha cheia. Não é possível inserir.\n");
+        return;
+    }
+
+    p->topo++; // Avança o topo
+    p->itens[p->topo] = nova; // Insere o novo elemento
+}
+
+void pop(Pilha *p, Peca *removida) {
+    if (pilhaVazia(p)) {
+        printf("Erro: Pilha vazia. Não é possívelremover.\n");
+        return;
+    }
+
+    *removida = p->itens[p->topo]; // Copia o valor do topo
+    p->topo--; // Decrementa o topo
+}
+
+void mostrarPilha(Pilha *p) {
+    printf("Pilha (topo -> base):\n");
+
+    for (int i = p->topo; i >= 0; i--) {
+        printf("[%c,%d] ", p->itens[i].tipo, p->itens[i].id);
+    }
+    printf("\n");
+}
+
 int main(void) {
+    srand(time(NULL));
 
     // 🧩 Nível Novato: Fila de Peças Futuras
     //
@@ -116,37 +172,60 @@ int main(void) {
     // - A cada remoção, insira uma nova peça ao final da fila.
 
     Fila filaPeca;
-    Peca PecaAux;
+    Peca pecaAux;
+    Pilha pilhaReserva;
     int opcao;
 
     inicializarFila(&filaPeca);
-    preencherInicial(&filaPeca);
+    inicializarPilha(&pilhaReserva);
 
     do {
         mostrarFila(&filaPeca);
-        
-        printf("\n1 - Jogar Peça (dequeue)");
-        printf("\n2 - Inserir Nova Peça (enqueue)");
+        mostrarPilha(&pilhaReserva);
+
+        printf("\n1 - Jogar Peça");
+        printf("\n2 - Reservar Peça");
+        printf("\n3 - Usar Peça da Reserva");
         printf("\n0 - Sair");
         printf("\nEscolha um opção: ");
         scanf("%d", &opcao);
 
         switch (opcao) {
         case 1:
-            removerPeca(&filaPeca, &PecaAux);
+            if (!filaVazia(&filaPeca)) {
+                dequeue(&filaPeca, &pecaAux);
+                printf("\n>>> Jogou: [%c %d]\n", pecaAux.tipo, pecaAux.id);
+                enqueue(&filaPeca, gerarPeca());
+            }
             break;
 
         case 2:
-            inserirPeca(&filaPeca, PecaAux);
+            if (pilhaCheia(&pilhaReserva)) {
+                printf("\nErro: Pilha de reserva cheia!\n");
+            } else if (!filaVazia(&filaPeca)) {
+                dequeue(&filaPeca, &pecaAux);
+                push(&pilhaReserva, pecaAux);
+                printf("\n>>> [%c %d] movida para a reserva.\n", pecaAux.tipo, pecaAux.id);
+                enqueue(&filaPeca, gerarPeca());
+            }
+            break;
+
+        case 3:
+            if (!pilhaVazia(&pilhaReserva)) {
+                pop(&pilhaReserva, &pecaAux);
+                printf("\n>>> Usou da reserva: [%c %d]\n", pecaAux.tipo, pecaAux.id);
+            } else {
+                printf("\nErro: Reserva vazia!\n");
+            }
             break;
 
         case 0:
-            printf("Encerrar...\n");
+            printf("\nEncerrar...\n");
             break;
 
 
         default:
-        printf("Opção invalida!\n");
+        printf("\nOpção invalida!\n");
         }
     } while (opcao != 0);
 
