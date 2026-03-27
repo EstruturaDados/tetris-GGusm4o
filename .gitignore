@@ -2,6 +2,7 @@
 *.o
 *.out
 *.exe
+*tetris
 
 # Se você estiver usando alguma IDE (como VS Code)
 .vscode/
